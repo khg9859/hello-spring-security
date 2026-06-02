@@ -60,6 +60,8 @@
            sec:authorize="hasRole('ADMIN')">+ 상품 등록</a>
     </div>
 
+    <div th:if="${message}" class="alert alert-success py-2 mb-3" role="alert" th:text="${message}"></div>
+
     <form class="row g-2 mb-3" method="get" th:action="@{/products}">
         <div class="col-md-6">
             <input type="text" name="keyword" class="form-control" placeholder="상품명으로 검색"
@@ -113,6 +115,8 @@
                             <td class="text-center text-muted small"
                                 th:text="${#temporals.format(p.createdAt, 'yyyy-MM-dd')}"></td>
                             <td class="text-center" sec:authorize="hasRole('ADMIN')">
+                                <a th:href="@{/products/{id}/edit(id=${p.id})}"
+                                   class="btn btn-outline-primary btn-sm">수정</a>
                                 <form th:action="@{/products/{id}/delete(id=${p.id})}" method="post"
                                       class="d-inline" onsubmit="return confirm('삭제하시겠습니까?')">
                                     <button class="btn btn-outline-danger btn-sm">삭제</button>
