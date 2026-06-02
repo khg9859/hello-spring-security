@@ -7,6 +7,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
@@ -17,7 +20,9 @@ import org.springframework.web.context.WebApplicationContext;
 
 import java.util.List;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -53,14 +58,33 @@ class ProductControllerTest {
     @WithMockUser(roles = "USER")
     @DisplayName("인증된 사용자 - 상품 목록 조회 성공 (200)")
     void listProducts_authenticated_returns200() throws Exception {
-        given(productService.findAll()).willReturn(List.of(
-            new Product("Spring Boot 4 교재", 35000, "실습서", 50)
-        ));
+        given(productService.getProducts(any(Pageable.class))).willReturn(
+            new PageImpl<>(List.of(
+                new Product("Spring Boot 4 교재", 35000, "실습서", 50)
+            ), PageRequest.of(0, 5), 1)
+        );
 
         mockMvc.perform(get("/products"))
             .andExpect(status().isOk())
             .andExpect(view().name("products/list"))
-            .andExpect(model().attributeExists("products"));
+            .andExpect(model().attributeExists("productPage"))
+            .andExpect(model().attribute("keyword", nullValue()));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    @DisplayName("인증된 사용자 - 키워드 검색 목록 조회 성공 (200)")
+    void listProducts_withKeyword_returns200() throws Exception {
+        given(productService.searchProducts(eq("삼성전자"), any(Pageable.class))).willReturn(
+            new PageImpl<>(List.of(
+                new Product("삼성전자 갤럭시 S25", 1290000, "스마트폰", 100)
+            ), PageRequest.of(0, 5), 1)
+        );
+
+        mockMvc.perform(get("/products").param("keyword", "삼성전자"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("products/list"))
+            .andExpect(model().attribute("keyword", "삼성전자"));
     }
 
     @Test
